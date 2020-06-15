@@ -1,0 +1,19 @@
+# ---- Default .gitignore
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# ---- Temporary script
+*-Ex.R
+*-Ex.Rmd
+
+# ---- macOS.gitignore
+.DS_Store
+
+# ---- Output files
+*.log
+*.png
+*.html
+*.jpg
+*.csv
