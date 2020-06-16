@@ -5,7 +5,7 @@ library(data.table)
 path <- fs::path("","Volumes","Gillis_Research","Christelle Colin-Leitzinger", "read VCF files")
 vcf <- read.delim(paste0(path, "/all_samples_sampleFiltered_bcfIsec.hg38_multianno_filtered_filtered_intersect.txt"),
                   na.strings = c("./.:.:.:.:.:.:.", "./.:.:.:.:.:.:.:.:.:."))
-vcf <- read.delim(file.choose(), na.strings = c("./.:.:.:.:.:.:.", "./.:.:.:.:.:.:.:.:.:."))
+# vcf <- read.delim(file.choose(), na.strings = c("./.:.:.:.:.:.:.", "./.:.:.:.:.:.:.:.:.:."))
 
 vcf <- vcf %>% 
   # Unite all mutations characteristics as a row names
@@ -23,8 +23,21 @@ vcf <- vcf %>%
            sep = " ")
 # Generate the gene element variables fron the INFO var
 vcf$GENE <- str_match(vcf$INFO, "Gene.ensGene=(.*?);GeneDetail.ensGene=")[,2]
-vcf$VARIANT_C <- str_match(vcf$INFO,"c.(.*?);esp6500siv2_all")
-vcf$VARIANT_P <- str_match(vcf$INFO, "p.(.*?);esp6500siv2_all")
+vcf$VARIANT_C <- str_match(vcf$INFO, "(.*);esp6500siv2_all")[,2]
+vcf$VARIANT_C
+vcf$VARIANT_C <- str_sub(vcf$VARIANT_C, start = -60)
+vcf$VARIANT_C
+vcf$VARIANT_C <- str_match(vcf$VARIANT_C, "c.(.*)")[,1]
+vcf$VARIANT_C
+
+vcf <- vcf %>% 
+  mutate(VARIANT_c = VARIANT_C) %>% 
+  separate(VARIANT_c, "exon", into = c("NULL", "VARIANT_c")) %>% 
+  mutate(VARIANT_c = coalesce(VARIANT_c, VARIANT_C))
+vcf$VARIANT_C <- str_match(vcf$VARIANT_c, "c.(.*):p.")[,2] # Need to coalescence with no p for ID 44
+vcf$VARIANT_C
+vcf$VARIANT_P <- str_match(vcf$VARIANT_c, ":p.(.*)$")[,2]
+vcf$VARIANT_P
 vcf$FUNCTION <- str_match(vcf$INFO, "ExonicFunc.knownGene=(.*?);")[,2] # Or can do "ExonicFunc.ensGene="
 vcf$COSMIC <- str_match(vcf$INFO, "OccurSum=(.*?);")[,2]
 vcf$ESP6500 <- str_match(vcf$INFO, "esp6500siv2_all=(.*?);")[,2]
