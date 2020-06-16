@@ -23,8 +23,16 @@ vcf <- vcf %>%
            sep = " ")
 # Generate the gene element variables fron the INFO var
 vcf$GENE <- str_match(vcf$INFO, "Gene.ensGene=(.*?);GeneDetail.ensGene=")[,2]
-vcf$VARIANT_C <- str_match(vcf$INFO,"c.(.*?);esp6500siv2_all")
-vcf$VARIANT_P <- str_match(vcf$INFO, "p.(.*?);esp6500siv2_all")
+vcf$VARIANT_C <- str_match(vcf$INFO, "(.*);esp6500siv2_all")[,2]
+vcf$VARIANT_C
+vcf$VARIANT_C <- str_sub(vcf$VARIANT_C, start = -60)
+vcf$VARIANT_C
+vcf$VARIANT_C <- str_match(vcf$VARIANT_C, "c.(.*)")[,2]
+vcf$VARIANT_C
+vcf$VARIANT_P <- str_match(vcf$VARIANT_C, ":p.(.*)$")
+vcf$VARIANT_P
+vcf$VARIANT_C <- str_match(vcf$VARIANT_C, "(.*):p.")[,1]
+vcf$VARIANT_C
 vcf$FUNCTION <- str_match(vcf$INFO, "ExonicFunc.knownGene=(.*?);")[,2] # Or can do "ExonicFunc.ensGene="
 vcf$COSMIC <- str_match(vcf$INFO, "OccurSum=(.*?);")[,2]
 vcf$ESP6500 <- str_match(vcf$INFO, "esp6500siv2_all=(.*?);")[,2]
