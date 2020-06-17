@@ -23,20 +23,25 @@ vcf <- vcf %>%
            sep = " ")
 # Generate the gene element variables fron the INFO var
 vcf$GENE <- str_match(vcf$INFO, "Gene.ensGene=(.*?);GeneDetail.ensGene=")[,2]
-vcf$VARIANT_C <- str_match(vcf$INFO, "(.*);esp6500siv2_all")[,2]
+vcf$VARIANT_C <- str_match(vcf$INFO, "(.*);esp6500siv2_all")[,2] # 1. Take the whole string before "esp6500siv2_all"
 vcf$VARIANT_C
-vcf$VARIANT_C <- str_sub(vcf$VARIANT_C, start = -60)
+vcf$VARIANT_C <- str_sub(vcf$VARIANT_C, start = -60) # 2. Take only the 60 char before "esp6500siv2_all"
 vcf$VARIANT_C
-vcf$VARIANT_C <- str_match(vcf$VARIANT_C, "c.(.*)")[,1]
+vcf$VARIANT_C <- str_match(vcf$VARIANT_C, "c.(.*)")[,1] # 3. Take from the first c. (but will find sometimes the 2 last occurence)
 vcf$VARIANT_C
-
 vcf <- vcf %>% 
   mutate(VARIANT_c = VARIANT_C) %>% 
-  separate(VARIANT_c, "exon", into = c("NULL", "VARIANT_c")) %>% 
-  mutate(VARIANT_c = coalesce(VARIANT_c, VARIANT_C))
-vcf$VARIANT_C <- str_match(vcf$VARIANT_c, "c.(.*):p.")[,2] # Need to coalescence with no p for ID 44
+  separate(VARIANT_c, "exon", into = c("NULL", "VARIANT_c")) %>% # 4. Seaprate by "exon" but will lose the ones who were 1 occurence
+  mutate(VARIANT_c = coalesce(VARIANT_c, VARIANT_C)) # 4. So coalesce the ones lost (NA) by the "VARIANT_C" which has them
+vcf$VARIANT_c
 vcf$VARIANT_C
-vcf$VARIANT_P <- str_match(vcf$VARIANT_c, ":p.(.*)$")[,2]
+vcf$VARIANT_C <- str_match(vcf$VARIANT_c, "c.(.*):p.")[,2] # 5. Take all between "c". and "p." but will lose data if "p." id not furnished
+vcf$VARIANT_C
+vcf$VARIANT_C1 <- str_match(vcf$VARIANT_c, "c.(.*)")[,2] # 5. So do the same with just "c."
+vcf$VARIANT_C1
+vcf$VARIANT_C <- coalesce(vcf$VARIANT_C, vcf$VARIANT_C1) # 5. And coalesce the ones lost (NA) by the "VARIANT_C1" which has them
+vcf$VARIANT_C
+vcf$VARIANT_P <- str_match(vcf$VARIANT_c, ":p.(.*)$")[,2] # 6. Take the string after the "p."
 vcf$VARIANT_P
 vcf$FUNCTION <- str_match(vcf$INFO, "ExonicFunc.knownGene=(.*?);")[,2] # Or can do "ExonicFunc.ensGene="
 vcf$COSMIC <- str_match(vcf$INFO, "OccurSum=(.*?);")[,2]
