@@ -23,6 +23,21 @@ vcf <- vcf %>%
            sep = " ")
 # Generate the gene element variables fron the INFO var
 vcf$GENE <- str_match(vcf$INFO, "Gene.ensGene=(.*?);GeneDetail.ensGene=")[,2]
+
+
+vcf <- vcf %>% 
+  mutate(VARIANT_C = str_match(INFO, "(.*);esp6500siv2_all")[,2]) %>% 
+  mutate(VARIANT_c = VARIANT_C) %>% 
+  separate(VARIANT_c, "exon", into = paste("VARIANT_c", 1:25, sep="_")) %>% 
+  mutate(VARIANT_c = coalesce(VARIANT_c_25, VARIANT_c_24, VARIANT_c_23, VARIANT_c_22, VARIANT_c_21,
+                              VARIANT_c_20, VARIANT_c_19, VARIANT_c_18, VARIANT_c_17, VARIANT_c_16,
+                              VARIANT_c_15, VARIANT_c_14, VARIANT_c_13, VARIANT_c_12, VARIANT_c_11,
+                              VARIANT_c_10, VARIANT_c_9, VARIANT_c_8, VARIANT_c_7, VARIANT_c_6,
+                              VARIANT_c_5, VARIANT_c_4, VARIANT_c_3, VARIANT_c_2, VARIANT_c_1)) %>% 
+  mutate(VARIANT_C1 = str_match(VARIANT_c, "c.(.*)")[,2]) %>% 
+  mutate(VARIANT_C = str_match(VARIANT_c, "c.(.*):p.")[,2]) %>% 
+  mutate(VARIANT_C = coalesce(VARIANT_C, VARIANT_C1)) %>% 
+  mutate(VARIANT_P = str_match(VARIANT_c, ":p.(.*)$")[,2])
 vcf$VARIANT_C <- str_match(vcf$INFO, "(.*);esp6500siv2_all")[,2] # 1. Take the whole string before "esp6500siv2_all"
 vcf$VARIANT_C
 vcf$VARIANT_C <- str_sub(vcf$VARIANT_C, start = -60) # 2. Take only the 60 char before "esp6500siv2_all"
@@ -43,6 +58,9 @@ vcf$VARIANT_C <- coalesce(vcf$VARIANT_C, vcf$VARIANT_C1) # 5. And coalesce the o
 vcf$VARIANT_C
 vcf$VARIANT_P <- str_match(vcf$VARIANT_c, ":p.(.*)$")[,2] # 6. Take the string after the "p."
 vcf$VARIANT_P
+
+
+
 vcf$FUNCTION <- str_match(vcf$INFO, "ExonicFunc.knownGene=(.*?);")[,2] # Or can do "ExonicFunc.ensGene="
 vcf$COSMIC <- str_match(vcf$INFO, "OccurSum=(.*?);")[,2]
 vcf$ESP6500 <- str_match(vcf$INFO, "esp6500siv2_all=(.*?);")[,2]
@@ -63,5 +81,5 @@ vcf <- vcf %>% # separate FORMAT and DATA into format and data for corresponding
            "format_9", "read_9", "format_10", "read_10") 
 
 
-write_csv(vcf, paste0(path, "/vcf.csv"))
+write_csv(vcf, paste0(path, "/cleaned vcf.csv"))
 
