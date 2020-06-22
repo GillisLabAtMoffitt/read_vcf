@@ -2,11 +2,16 @@
 library(tidyverse)
 library(data.table)
 
-path <- fs::path("","Volumes","Gillis_Research","Christelle Colin-Leitzinger", "read VCF files")
-vcf <- read.delim(paste0(path, "/all_samples_sampleFiltered_bcfIsec.hg38_multianno_filtered_filtered_intersect.txt"),
-                  na.strings = c("./.:.:.:.:.:.:.", "./.:.:.:.:.:.:.:.:.:."))
-# vcf <- read.delim(file.choose(), na.strings = c("./.:.:.:.:.:.:.", "./.:.:.:.:.:.:.:.:.:."))
+# path <- fs::path("","Volumes","Gillis_Research","Christelle Colin-Leitzinger", "read VCF files")
+# vcf <- read.delim(paste0(path, "/all_samples_sampleFiltered_bcfIsec.hg38_multianno_filtered_filtered_intersect.txt"),
+#                   na.strings = c("./.:.:.:.:.:.:.", "./.:.:.:.:.:.:.:.:.:."))
 
+
+# Load data
+vcf <- read.delim(file.choose(), na.strings = c("./.:.:.:.:.:.:.", "./.:.:.:.:.:.:.:.:.:."))
+
+
+# Data cleaning
 vcf <- vcf %>% 
   # Unite all mutations characteristics as a row names = make tidy data
   unite(col = "X.CHROM_POS_ID_REF_ALT_QUAL_FILTER_INFO_FORMAT",
@@ -57,8 +62,16 @@ vcf <- vcf %>%
     mutate(VAF = read_3) %>% # genarate VAF and DEPTH var from read aka DATA
     mutate(DEPTH = read_4) %>% # reorganize variable order
     select("patient_id", "CHROM", "POS", "REF", "ALT", "GENE", "VARIANT_C", 
-           "VARIANT_P", "FUNCTION", "COSMIC", "ESP6500", "VAF", "DEPTH", "INFO", "FORMAT", "DATA") 
+           "VARIANT_P", "FUNCTION", "COSMIC", "ESP6500", "VAF", "DEPTH", "INFO", "FORMAT", "DATA") %>% 
+  arrange(patient_id)
 
 
-write_csv(vcf, paste0(path, "/cleaned vcf.csv"))
-
+# Saving data
+# To save in path
+# write_csv(vcf, paste0(path, "/cleaned vcf.csv"))
+# To save in the working directory
+write_csv(vcf, "cleaned vcf.csv")
+# To save in an other working directory
+# Set up the directory first, here my desktop
+setwd("/Users/colinccm/Desktop")
+write_csv(vcf, "cleaned vcf.csv")
