@@ -20,7 +20,7 @@ vcf <- vcf %>%
   pivot_longer(-X.CHROM_POS_ID_REF_ALT_QUAL_FILTER_INFO_FORMAT, 
                names_to = "patient_id", values_to = "DATA") %>% 
   # drop the mutations not present
-  drop_na("DATA") %>% 
+  # drop_na("DATA") %>% 
   # separate back the rownames to have mutation elements
   mutate(m_element = X.CHROM_POS_ID_REF_ALT_QUAL_FILTER_INFO_FORMAT) %>% 
   separate(m_element, 
