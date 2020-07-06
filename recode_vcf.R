@@ -65,6 +65,15 @@ vcf <- vcf %>%
            "VARIANT_P", "FUNCTION", "COSMIC", "ESP6500", "VAF", "DEPTH", "INFO", "FORMAT", "DATA") %>% 
   arrange(patient_id)
 
+# Clean final data to have each patient with or without mutation 
+unique_patient_in_mutation <- as.data.frame(unique(vcf$patient_id)) %>% 
+  `colnames<-` (c("patient_id"))
+vcf <- vcf %>% drop_na("DATA")
+# CHIP_muts <- dcast(setDT(CHIP_muts), patient_id ~ rowid(patient_id),
+#                    value.var = c("CHROM", "POS", "REF", "ALT", "GENE", "VARIANT_C", "VARIANT_P",
+#                                  "FUNCTION", "COSMIC", "ESP6500", "VAF", "DEPTH", "INFO",
+#                                  "FORMAT", "DATA"))
+vcf <- left_join(unique_patient_in_mutation, vcf, by = "patient_id")
 
 # Saving data
 # To save in path
