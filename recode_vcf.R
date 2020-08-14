@@ -28,7 +28,7 @@ vcf <- vcf %>%
            sep = " ") %>% 
 
 # Generate the gene element variables from the INFO var
-  mutate(GENE = str_match(INFO, "Gene.ensGene=(.*?);GeneDetail.ensGene=")[,2]) %>% 
+  mutate(GENE = str_match(INFO, ";AAChange.knownGene=(.*?):")[,2]) %>% # was before "Gene.ensGene=(.*?);GeneDetail.ensGene="
   # VAVIANT_C
   # 1. Take the whole string before "esp6500siv2_all"
   mutate(VARIANT_C = str_match(INFO, "(.*);esp6500siv2_all")[,2]) %>% 
