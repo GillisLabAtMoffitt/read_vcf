@@ -8,7 +8,8 @@ library(data.table)
 
 
 # Load data
-vcf <- read.delim(file.choose(), na.strings = c("./.:.:.:.:.:.:.", "./.:.:.:.:.:.:.:.:.:."))
+vcf <- read.delim(file.choose(), na.strings = c("./.:.:.:.:.:.:.", "./.:.:.:.:.:.:.:.:.:.",
+                                                "././.:.:.:.:.:.:.", "././.:.:.:.:.:.:.:.:.:."))
 
 
 # Data cleaning
