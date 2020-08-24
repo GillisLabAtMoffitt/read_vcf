@@ -3,14 +3,12 @@ library(tidyverse)
 library(data.table)
 
 # path <- fs::path("","Volumes","Gillis_Research","Christelle Colin-Leitzinger", "read VCF files")
-# vcf <- read.delim(paste0(path, "/all_samples_sampleFiltered_bcfIsec.hg38_multianno_filtered_filtered_intersect.txt"),
-#                   na.strings = c("./.:.:.:.:.:.:.", "./.:.:.:.:.:.:.:.:.:."))
-
 
 # Load data
-vcf <- read.delim(file.choose(), na.strings = c("./.:.:.:.:.:.:.", "./.:.:.:.:.:.:.:.:.:.",
-                                                "././.:.:.:.:.:.:.", "././.:.:.:.:.:.:.:.:.:."))
-
+# vcf <- read.delim(file.choose(), na.strings = c("./.:.:.:.:.:.:.", "./.:.:.:.:.:.:.:.:.:.",
+#                                                 "././.:.:.:.:.:.:.", "././.:.:.:.:.:.:.:.:.:."))
+vcf <- read.delim(file.choose()) %>% 
+  mutate_all(funs(str_replace(., "\\.\\/(.*)", NA_character_)))
 
 # Data cleaning
 vcf <- vcf %>% 
