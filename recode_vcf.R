@@ -17,17 +17,21 @@ vcf <- vcf %>%
         c("X.CHROM", "POS","ID","REF","ALT","QUAL","FILTER","INFO","FORMAT"), sep = " ") %>% 
   # pivot longer which create 1 row per mutation per patients
   pivot_longer(-X.CHROM_POS_ID_REF_ALT_QUAL_FILTER_INFO_FORMAT, 
-               names_to = "patient_id", values_to = "DATA") %>% 
+               names_to = "patient_id", values_to = "DATA") 
+# Clean final data to have each patient with or without mutation 
+unique_patient_in_mutation <- as.data.frame(unique(vcf$patient_id)) %>% 
+  `colnames<-` (c("patient_id"))
+
+vcf <- vcf %>% 
   # drop the mutations not present
-  # drop_na("DATA") %>% 
+  drop_na("DATA") %>% 
   # separate back the rownames to have mutation elements
   mutate(m_element = X.CHROM_POS_ID_REF_ALT_QUAL_FILTER_INFO_FORMAT) %>% 
   separate(m_element, 
            into = c("CHROM", "POS","ID","REF","ALT","QUAL","FILTER","INFO","FORMAT"), 
            sep = " ") %>% 
-
 # Generate the gene element variables from the INFO var
-  mutate(GENE = str_match(INFO, ";AAChange.knownGene=(.*?):")[,2]) %>% # was before "Gene.ensGene=(.*?);GeneDetail.ensGene="
+  mutate(GENE = str_match(INFO, ";Gene.knownGene=(.*?);")[,2]) %>% # was before "Gene.ensGene=(.*?);GeneDetail.ensGene="
   # VAVIANT_C
   # 1. Take the whole string before "esp6500siv2_all"
   mutate(VARIANT_C = str_match(INFO, "(.*);esp6500siv2_all")[,2]) %>% 
@@ -64,10 +68,7 @@ vcf <- vcf %>%
            "VARIANT_P", "FUNCTION", "COSMIC", "ESP6500", "VAF", "DEPTH", "INFO", "FORMAT", "DATA") %>% 
   arrange(patient_id)
 
-# Clean final data to have each patient with or without mutation 
-unique_patient_in_mutation <- as.data.frame(unique(vcf$patient_id)) %>% 
-  `colnames<-` (c("patient_id"))
-vcf <- vcf %>% drop_na("DATA")
+
 # CHIP_muts <- dcast(setDT(CHIP_muts), patient_id ~ rowid(patient_id),
 #                    value.var = c("CHROM", "POS", "REF", "ALT", "GENE", "VARIANT_C", "VARIANT_P",
 #                                  "FUNCTION", "COSMIC", "ESP6500", "VAF", "DEPTH", "INFO",
