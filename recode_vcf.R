@@ -30,7 +30,7 @@ vcf <- vcf %>%
            sep = " ") %>% 
   # Generate the gene element variables from the INFO var
   mutate(GENE = str_match(INFO, ";Gene.knownGene=(.*?);")[,2]) %>% # was before "Gene.ensGene=(.*?);GeneDetail.ensGene="
-  
+  mutate(gnomAD_noncancer = str_match(INFO, ";non_cancer_AF_popmax=(.*?);")[,2]) %>%
   # VAVIANT_C
   # 1. Take the whole string before "esp6500siv2_all"
   mutate(VARIANT_C = str_match(INFO, "(.*);esp6500siv2_all")[,2]) %>% 
@@ -68,7 +68,7 @@ vcf <- vcf %>%
     mutate(VAF = read_3) %>% # genarate VAF and DEPTH var from read aka DATA
     mutate(DEPTH = read_4) %>% # reorganize variable order
     select("patient_id", "CHROM", "POS", "REF", "ALT", "GENE", "VARIANT_C", 
-           "VARIANT_P", "LOCATION", "FUNCTION", "COSMIC", "ESP6500", "VAF", 
+           "VARIANT_P", "LOCATION", "FUNCTION", "COSMIC", "ESP6500", "gnomAD_noncancer", "VAF", 
            "DEPTH", "INFO", "FORMAT", "DATA") %>% 
   arrange(patient_id)
 
