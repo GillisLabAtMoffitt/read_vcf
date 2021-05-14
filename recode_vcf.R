@@ -5,13 +5,14 @@ library(data.table)
 # Load data
 vcf <- read.delim(file.choose()) %>% 
   mutate_all(funs(str_replace(., "\\.\\/(.*)", NA_character_)))
-
+vcf <- read_csv(file.choose()) %>% 
+  mutate_all(funs(str_replace(., "\\.\\/(.*)", NA_character_)))
 
 # Data cleaning
 vcf <- vcf %>% 
   # Unite all mutations characteristics as a row names = make tidy data to allow pivot
   unite(col = "X.CHROM_POS_ID_REF_ALT_QUAL_FILTER_INFO_FORMAT",
-        c("X.CHROM", "POS","ID","REF","ALT","QUAL","FILTER","INFO","FORMAT"), sep = " ") %>% 
+        c(1:"FORMAT"), sep = " ") %>% 
   # pivot longer which create 1 row per mutation per patients
   pivot_longer(-X.CHROM_POS_ID_REF_ALT_QUAL_FILTER_INFO_FORMAT, 
                names_to = "patient_id", values_to = "DATA") 
@@ -72,14 +73,15 @@ vcf <- vcf %>%
            "DEPTH", "INFO", "FORMAT", "DATA") %>% 
   arrange(patient_id)
 
-
-
 vcf <- left_join(unique_patient_in_mutation, vcf, by = "patient_id")
+
 
 # Saving data
 # To save in the working directory
-write_csv(vcf, "cleaned vcf.csv")
+file_name <- paste0("cleaned vcf ", format(Sys.time(),"%m%d%Y"),".csv")
+
+write_csv(vcf, file_name)
 # To save in an other working directory
 # Set up the directory first, here my desktop
 setwd("/Users/colinccm/Desktop")
-write_csv(vcf, "cleaned vcf.csv")
+write_csv(vcf, file_name)
