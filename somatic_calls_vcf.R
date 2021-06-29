@@ -1,10 +1,11 @@
 # Import library
 library(tidyverse)
 library(data.table)
+library(gtsummary)
 
 doParallel::registerDoParallel()
 # Load data
-# vcf3 <- read_delim(file.choose(), delim = "\t")
+# data <- read_delim(file.choose(), delim = "\t")
 data <- readr::read_rds("somatic mutation parsed.rds")
 
 # Data cleaning
@@ -25,7 +26,7 @@ vcf <- somatic_calls %>%
                names_to = "SLID_tumor", values_to = "DATA") 
 
 # Save each patient ID with or without mutation to add back at the end
-unique_patient_in_mutation <- as.data.frame(unique(vcf$patient_id)) %>% 
+unique_patient_in_mutation <- as.data.frame(unique(vcf$SLID_tumor)) %>% 
   `colnames<-` (c("SLID_tumor"))
 
 
@@ -36,8 +37,6 @@ vcf1 <- vcf %>%
 saveRDS(vcf1, "mid processed data.rds")
 
 vcf2 <- vcf1 %>% 
-  # GT:GQ:GQA:GTS:GTM:DP:AD:DP_Normal:AD_Normal
-
   # separate back the rownames to have mutation elements
   mutate(mut_element = DATA) %>% 
   separate(mut_element, 
@@ -83,41 +82,7 @@ vcf6 <- vcf5 %>%
   # VARIANT_P
   mutate(VARIANT_P = str_match(short, "p.([:alnum:]*)")[,2]) %>%
   
-  
-  # mutate(gnomAD_noncancer = str_match(INFO, ";non_cancer_AF_popmax=(.*?);")[,2]) %>%
-  # # 1. Take the whole string before "esp6500siv2_all"
-  # mutate(VARIANT_c = VARIANT_C) %>%
-  # # 2. Seaprate by "exon" and coalesce from last to first to get the last "exon" string
-  # mutate(VARIANT_c = str_split(string= VARIANT_c, pattern= "exon")) %>%
-  # unnest(VARIANT_c) %>%
-  # group_by(patient_id, VARIANT_C) %>%
-  # mutate(row = row_number()) %>%
-  # spread(row, VARIANT_c) %>%
-  # ungroup() %>%
-  # # separate(VARIANT_c, "exon", into = paste("VARIANT_c", 1:25, sep="_")) %>%
-  # mutate(VARIANT_c = coalesce(!!! select(., last_col():"1"))) %>%
-  # # 3. Take all between "c". and "p." but will lose data if "p." id not furnished
-  # mutate(VARIANT_C = str_match(VARIANT_c, "c.(.*):p.")[,2]) %>%
-  # # 4. So do the same with just "c." and coalesce the ones lost (NA) by the "VARIANT_C1" which has them
-  # mutate(VARIANT_C1 = str_match(VARIANT_c, "c.(.*)")[,2]) %>%
-  # mutate(VARIANT_C = coalesce(VARIANT_C, VARIANT_C1)) %>%
-  # 
-  # # Take the string after the "p." to the end of string
-  # mutate(VARIANT_P = str_match(VARIANT_c, ":p.(.*)$")[,2]) %>%
-  # mutate(FUNCTION = str_match(INFO, "ExonicFunc.knownGene=(.*?);")[,2]) %>% # Or can do "ExonicFunc.ensGene="
-  # mutate(COSMIC = str_match(INFO, "OccurSum=(.*?);")[,2]) %>%
-  # mutate(ESP6500 = str_match(INFO, "esp6500siv2_all=(.*?);")[,2]) %>%
-
-  # # separate FORMAT and DATA into format and data for corresponding value
-  # mutate(format = FORMAT) %>%
-  # mutate(read = DATA) %>%
-  # # separate(format, into = paste("format", 1:10, sep="_"), # may not be necessary but can be useful
-  # #          sep = ":") %>%
-  # separate(read, into = paste("read", 1:10, sep="_"), # separate read aka DATA to be able to subset VAF and DEPTH
-  #          sep = ":") %>%
-  # mutate(VAF = read_3) %>% # genarate VAF and DEPTH var from read aka DATA
-  # mutate(DEPTH = read_4) %>% # reorganize variable order
-  select("patient_id", "CHROM", "POS", "REF", "ALT", "GENE", 
+  select("SLID_tumor", "CHROM", "POS", "REF", "ALT", "GENE", 
          "VARIANT_C", "VARIANT_P",
          "LOCATION", #"FUNCTION", 
          # "COSMIC", "ESP6500", "gnomAD_noncancer", "VAF",
@@ -125,7 +90,7 @@ vcf6 <- vcf5 %>%
          "thousand_genome",
          "GT", "GQ","GQA","GTS","GTM","DP","AD","DP_Normal","AD_Normal",
          "INFO", "FORMAT", "DATA") %>%
-  arrange(patient_id)
+  arrange(SLID_tumor)
 
 filtered_somatic_calls <- left_join(unique_patient_in_mutation, vcf6, by = "SLID_tumor")
 
@@ -136,14 +101,82 @@ write_csv(filtered_somatic_calls, "filtered_somatic_calls.csv")
 
 # Limit to the tumor SLID closest to blood
 path <- fs::path("","Volumes","Gillis_Research","Christelle Colin-Leitzinger", "merging slid ID")
-read_csv(paste0(path, "/List tumor SLID earliest or closest to germline.csv")) %>% 
+final <- read_csv(paste0(path, "/List tumor SLID earliest or closest to germline.csv")) %>% 
   select(avatar_id, SLID_germline, collectiondt_germline, SLID_tumor, collectiondt_tumor) %>% 
-  left_join(., filtered_somatic_calls, by = c("SLID_tumor", ))
+  left_join(., filtered_somatic_calls, by = "SLID_tumor")
+
+write_csv(final, "final.csv")
 
 
+################ MAF file
 
+maf_file <- read_delim(file.choose(), delim = "\t")
 
+final <- read_csv(paste0(path, "/List tumor SLID earliest or closest to germline.csv")) %>% 
+  select(avatar_id, SLID_germline, collectiondt_germline, SLID_tumor, collectiondt_tumor) %>% 
+  left_join(., maf_file, by = c("SLID_tumor" = "Tumor_Sample_Barcode"))
 
+final <- final %>% 
+  mutate(tumor_VAF = t_alt_count / t_depth) %>% 
+  mutate(normal_VAF = n_alt_count / n_depth) %>% 
+  purrr::keep(~!all(is.na(.))) %>% 
+  
+  select("avatar_id", "SLID_germline", "collectiondt_germline", "SLID_tumor", 
+         "collectiondt_tumor", "Hugo_Symbol", "NCBI_Build", "Chromosome",
+         "Start_Position", "End_Position", "Strand", 
+         "Variant_Classification", "Variant_Type", "Reference_Allele", 
+         "Tumor_Seq_Allele1", "Tumor_Seq_Allele2",
+         "HGVSc", "HGVSp_Short", "Transcript_ID", "Exon_Number", 
+         "tumor_VAF", "normal_VAF",
+         "t_depth", "t_ref_count", "t_alt_count", "n_depth", "n_ref_count",
+         "n_alt_count", everything())
 
+write_csv(final, "somatic mutation.csv")
 
+path <- fs::path("","Volumes","Gillis_Research","Christelle Colin-Leitzinger", 
+                 "CHIP in Avatar", "TumorMuts")
+
+tbl <- final %>% 
+  distinct(avatar_id, Hugo_Symbol, .keep_all = TRUE) %>% 
+  select(Hugo_Symbol) %>% 
+  tbl_summary(sort = list(everything() ~ "frequency")) %>% 
+  as_gt() %>% 
+  gt::tab_source_note(gt::md("**Count 1 gene per patient**"))
+
+gt::gtsave(tbl, zoom = 1, paste0(path, "/Output/Tumor Mutations in MM Avatar.pdf"))
+
+tbl <- final %>% 
+  distinct(avatar_id, Hugo_Symbol, .keep_all = TRUE) %>% 
+  filter(str_detect(Hugo_Symbol, "KRAS|NRASTRAF3|DIS3|BRAF|FAM46C|TP53|CYLD|MAX|RB1")) %>%
+  select(Hugo_Symbol) %>% 
+  tbl_summary(sort = list(everything() ~ "frequency")) %>% 
+  as_gt() %>% 
+  gt::tab_source_note(gt::md("**Count 1 gene per patient**"))
+
+gt::gtsave(tbl, zoom = 1, paste0(path, "/Output/Tumor Mutations MM genes.pdf"))
+
+list <- final %>% 
+  select(Variant_Classification) %>% count(Variant_Classification, sort = TRUE)
+
+write_csv(list, paste0(path, "/Output/List funtions in data.csv"))  
+  
+list <- final %>% 
+  filter(Hugo_Symbol != "Unknown") %>%
+  select(Variant_Classification) %>% 
+  count(Variant_Classification, sort = TRUE)
+
+write_csv(list, paste0(path, "/Output/List funtions in data Unknown gene removed.csv")) 
+  
+list <- final %>% 
+  select(Exon_Number) %>% 
+  count(Exon_Number, sort = TRUE)
+
+write_csv(list, paste0(path, "/Output/List exon number in data.csv")) 
+  
+  
+  
+  
+  
+  
+  
 
