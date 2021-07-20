@@ -112,6 +112,8 @@ write_csv(final, "final.csv")
 
 maf_file <- read_delim(file.choose(), delim = "\t")
 
+path <- fs::path("","Volumes","Gillis_Research","Christelle Colin-Leitzinger", "merging slid ID")
+
 final <- read_csv(paste0(path, "/List tumor SLID earliest or closest to germline.csv")) %>% 
   select(avatar_id, SLID_germline, collectiondt_germline, SLID_tumor, collectiondt_tumor) %>% 
   left_join(., maf_file, by = c("SLID_tumor" = "Tumor_Sample_Barcode"))
@@ -120,6 +122,8 @@ final <- final %>%
   mutate(tumor_VAF = t_alt_count / t_depth) %>% 
   mutate(normal_VAF = n_alt_count / n_depth) %>% 
   purrr::keep(~!all(is.na(.))) %>% 
+  
+  filter(Variant_Classification != "0", Variant_Classification != "synonymous_SNV") %>% 
   
   select("avatar_id", "SLID_germline", "collectiondt_germline", "SLID_tumor", 
          "collectiondt_tumor", "Hugo_Symbol", "NCBI_Build", "Chromosome",
@@ -131,7 +135,7 @@ final <- final %>%
          "t_depth", "t_ref_count", "t_alt_count", "n_depth", "n_ref_count",
          "n_alt_count", everything())
 
-write_csv(final, "somatic mutation.csv")
+write_csv(final, "somatic mutation from Jamie MAF file.csv")
 
 path <- fs::path("","Volumes","Gillis_Research","Christelle Colin-Leitzinger", 
                  "CHIP in Avatar", "TumorMuts")
@@ -145,15 +149,15 @@ tbl <- final %>%
 
 gt::gtsave(tbl, zoom = 1, paste0(path, "/Output/Tumor Mutations in MM Avatar.pdf"))
 
-tbl <- final %>% 
-  distinct(avatar_id, Hugo_Symbol, .keep_all = TRUE) %>% 
-  filter(str_detect(Hugo_Symbol, "KRAS|NRASTRAF3|DIS3|BRAF|FAM46C|TP53|CYLD|MAX|RB1")) %>%
-  select(Hugo_Symbol) %>% 
-  tbl_summary(sort = list(everything() ~ "frequency")) %>% 
-  as_gt() %>% 
-  gt::tab_source_note(gt::md("**Count 1 gene per patient**"))
-
-gt::gtsave(tbl, zoom = 1, paste0(path, "/Output/Tumor Mutations MM genes.pdf"))
+# tbl <- final %>% 
+#   distinct(avatar_id, Hugo_Symbol, .keep_all = TRUE) %>% 
+#   filter(str_detect(Hugo_Symbol, "KRAS|NRASTRAF3|DIS3|BRAF|FAM46C|TP53|CYLD|MAX|RB1")) %>%
+#   select(Hugo_Symbol) %>% 
+#   tbl_summary(sort = list(everything() ~ "frequency")) %>% 
+#   as_gt() %>% 
+#   gt::tab_source_note(gt::md("**Count 1 gene per patient**"))
+# 
+# gt::gtsave(tbl, zoom = 1, paste0(path, "/Output/Tumor Mutations MM genes.pdf"))
 
 list <- final %>% 
   select(Variant_Classification) %>% count(Variant_Classification, sort = TRUE)
