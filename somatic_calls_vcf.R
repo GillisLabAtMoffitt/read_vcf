@@ -112,9 +112,9 @@ write_csv(final, "final.csv")
 
 maf_file <- read_delim(file.choose(), delim = "\t")
 
-path <- fs::path("","Volumes","Gillis_Research","Christelle Colin-Leitzinger", "merging slid ID")
+path <- fs::path("","Volumes","Gillis_Research","Christelle Colin-Leitzinger")
 
-final <- read_csv(paste0(path, "/List tumor SLID earliest or closest to germline.csv")) %>% 
+final <- read_csv(paste0(path, "/merging slid ID/List tumor SLID earliest or closest to germline.csv")) %>% 
   select(avatar_id, SLID_germline, collectiondt_germline, SLID_tumor, collectiondt_tumor) %>% 
   left_join(., maf_file, by = c("SLID_tumor" = "Tumor_Sample_Barcode"))
 
@@ -123,7 +123,10 @@ final <- final %>%
   mutate(normal_VAF = n_alt_count / n_depth) %>% 
   purrr::keep(~!all(is.na(.))) %>% 
   
-  filter(Variant_Classification != "0", Variant_Classification != "synonymous_SNV", Variant_Classification != "nonframeshift_substitution") %>% 
+  filter(Variant_Classification != "0", 
+         Variant_Classification != "synonymous_SNV", 
+         Variant_Classification != "nonframeshift_substitution",
+         Variant_Classification != "frameshift_substitution") %>% 
   
   select("avatar_id", "SLID_germline", "collectiondt_germline", "SLID_tumor", 
          "collectiondt_tumor", "Hugo_Symbol", "NCBI_Build", "Chromosome",
@@ -135,7 +138,7 @@ final <- final %>%
          "t_depth", "t_ref_count", "t_alt_count", "n_depth", "n_ref_count",
          "n_alt_count", everything())
 
-write_csv(final, "somatic mutation from Jamie MAF file.csv")
+write_csv(final, paste0(path, "/CHIP in Avatar/TumorMuts/processed data/somatic mutation from Jamie MAF file.csv"))
 
 path <- fs::path("","Volumes","Gillis_Research","Christelle Colin-Leitzinger", 
                  "CHIP in Avatar", "TumorMuts")
@@ -180,7 +183,22 @@ write_csv(list, paste0(path, "/Output/List exon number in data.csv"))
   
   
   
-  
-  
-  
+# Investigaate SL203247 has 2888 variants
+a <- maf_file %>% filter(Tumor_Sample_Barcode == "SL203247") %>% 
+  filter(Variant_Classification %in% c("frameshift_deletion", "frameshift_insertion",
+                                       "nonframeshift_deletion", "nonframeshift_insertion",
+                                       "splicing", "stopgain_SNV", "stoploss_SNV", "nonsynonymous_SNV")) %>% 
+  filter(Hugo_Symbol %in% gene_list)
+sum(a$t_alt_count)  
+sum(a$t_ref_count)  
+sum(a$n_ref_count)  
+sum(a$n_alt_count)  
+
+
+gene_list <- c("KRAS", "NRAS", "FAM46C", "DIS3", "BRAF", "TP53", "RYR1", "DNAH5", "LRP1B",
+               "TRAF3", "EGR1", "SP140", "PRKD2", "CYLD", "RB1", "IRF4", "CSMD3", "PTCHD3", 
+               "AUTS2", "ABI3BP", "GRM7", "PARP4", "BCL7A", "SPEF2", "MYH13", "BRWD3", 
+               "MAX", "RPL10", "DDX17", "SAMHD1", "PLD1", "ANKRD26", "ATM", "CCND1", "SETD2")
+
+tumor_mutation <- read_csv(paste0(path, "/TumorMuts/processed data/somatic mutation from Jamie MAF file.csv")) 
 
